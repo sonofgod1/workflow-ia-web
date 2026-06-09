@@ -93,7 +93,7 @@ fi
 # Archivos a instalar (excluir CLAUDE.md, README.md, init.sh)
 ALL_FILES=$(echo "$TREE_RESPONSE" | grep -oP '"path":"[^"]*"' | cut -d'"' -f4 | grep -v '"')
 
-WORKFLOW_FILES=$(echo "$ALL_FILES" | grep -E "^(\.claude/|\.git/hooks/|docs/|\.gitignore|sync-workflow\.sh)" | grep -v "^$")
+WORKFLOW_FILES=$(echo "$ALL_FILES" | grep -E "^(\.claude/|git-hooks/|docs/|\.gitignore|sync-workflow\.sh)" | grep -v "^$")
 
 TOTAL=$(echo "$WORKFLOW_FILES" | grep -c "." || true)
 info "$TOTAL archivos a instalar"
@@ -135,7 +135,7 @@ ok "$INSTALLED archivos instalados"
 
 if ! $CLAUDE_EXISTS; then
   step "Creando CLAUDE.md"
-  
+
   HTTP_CODE=$(curl -s -o "./CLAUDE.md.tmp" -w "%{http_code}" "${API_HEADERS[@]}" "$RAW_BASE/CLAUDE.md")
   if [ "$HTTP_CODE" = "200" ]; then
     mv "./CLAUDE.md.tmp" "./CLAUDE.md"
