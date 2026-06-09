@@ -84,16 +84,14 @@ hotfix/[slug]   Arreglos urgentes en producción.
 
 ### Paso 3 — Instalar hooks de Git
 
-Los hooks ya están en `.git/hooks/` (incluidos en el workflow). Verificar que existen y tienen permisos de ejecución:
+Los hooks están en `git-hooks/` (versionados en el repo). Copiarlos a `.git/hooks/`:
 
 ```bash
-# Verificar existencia
-ls -la .git/hooks/pre-commit .git/hooks/pre-push .git/hooks/commit-msg
-
-# Dar permisos de ejecución
-chmod +x .git/hooks/pre-commit
-chmod +x .git/hooks/pre-push
-chmod +x .git/hooks/commit-msg
+cp git-hooks/pre-commit  .git/hooks/pre-commit
+cp git-hooks/pre-push    .git/hooks/pre-push
+cp git-hooks/commit-msg  .git/hooks/commit-msg
+chmod +x .git/hooks/pre-commit .git/hooks/pre-push .git/hooks/commit-msg
+```
 ```
 
 Explicar qué hace cada hook:
