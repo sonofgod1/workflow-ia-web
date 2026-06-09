@@ -1,0 +1,43 @@
+# Archivos protegidos — workflow-ia-web
+# El hook check-protected.sh verifica esta lista antes de cualquier edición
+# Formato: una ruta por línea. Soporta globs básicos.
+
+# Workflow y configuración central
+CLAUDE.md
+.claude/settings.json
+.claude/protected.txt
+
+# Contratos de diseño (contrato vinculante entre diseño e implementación)
+docs/design/tokens.json
+docs/design/components.md
+
+# Contratos de API y datos
+docs/contracts/api.md
+docs/contracts/seo-metadata.md
+docs/contracts/structured-data.md
+docs/contracts/components.ts
+
+# Credenciales y configuración sensible
+.env
+.env.local
+.env.production
+.env.staging
+*.pem
+*.key
+*.cert
+
+# Configuración de analytics (cambios aquí afectan medición de negocio)
+docs/analytics/measurement-plan.md
+
+# Configuración de deploy
+.github/workflows/*.yml
+vercel.json
+netlify.toml
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Hooks de Git (modificar estos rompe el flujo de calidad)
+.git/hooks/pre-commit
+.git/hooks/pre-push
+.git/hooks/commit-msg
