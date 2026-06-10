@@ -2,14 +2,14 @@
 # init.sh — Agrega workflow-ia-web a un proyecto existente
 #
 # Uso (desde la raíz de tu proyecto):
-#   curl -fsSL https://raw.githubusercontent.com/OWNER/workflow-ia-web/main/init.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/sonofgod1/workflow-ia-web/main/init.sh | bash
 #
 # O descargado localmente:
 #   bash init.sh
 
 set -e
 
-WORKFLOW_REPO="sonofgod1/workflow-ia-web"    # ← Reemplazar con tu usuario/org
+WORKFLOW_REPO="sonofgod1/workflow-ia-web"
 BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/$WORKFLOW_REPO/$BRANCH"
 GITHUB_API="https://api.github.com"
@@ -24,8 +24,9 @@ step() { echo ""; echo "── $1 ───────────────�
 
 # ─── Verificar entorno ────────────────────────────────────────────────────────
 
-command -v curl > /dev/null 2>&1 || err "curl es necesario. Instálalo antes de continuar."
-command -v git  > /dev/null 2>&1 || err "git es necesario. Instálalo antes de continuar."
+command -v curl   > /dev/null 2>&1 || err "curl es necesario. Instálalo antes de continuar."
+command -v git    > /dev/null 2>&1 || err "git es necesario. Instálalo antes de continuar."
+command -v python3 > /dev/null 2>&1 || err "python3 es necesario. Instálalo antes de continuar."
 
 echo ""
 echo "┌─────────────────────────────────────────────────┐"
@@ -85,13 +86,24 @@ fi
 TREE_RESPONSE=$(curl -s "${API_HEADERS[@]}" \
   "$GITHUB_API/repos/$WORKFLOW_REPO/git/trees/$BRANCH?recursive=1")
 
+# Verificar error de API
 if echo "$TREE_RESPONSE" | grep -q '"message"'; then
-  API_MSG=$(echo "$TREE_RESPONSE" | grep -o '"message":"[^"]*"' | cut -d'"' -f4)
+  API_MSG=$(echo "$TREE_RESPONSE" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(data.get('message', 'Error desconocido'))
+" 2>/dev/null || echo "Error desconocido")
   err "Error de GitHub API: $API_MSG"
 fi
 
-# Archivos a instalar (excluir CLAUDE.md, README.md, init.sh)
-ALL_FILES=$(echo "$TREE_RESPONSE" | grep -oP '"path":"[^"]*"' | cut -d'"' -f4 | grep -v '"')
+# ── Extraer paths con python3 (compatible macOS y Linux) ──────────────────────
+ALL_FILES=$(echo "$TREE_RESPONSE" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for item in data.get('tree', []):
+    if item.get('type') == 'blob':
+        print(item['path'])
+")
 
 WORKFLOW_FILES=$(echo "$ALL_FILES" | grep -E "^(\.claude/|git-hooks/|docs/|\.gitignore|sync-workflow\.sh)" | grep -v "^$")
 
@@ -116,7 +128,7 @@ while IFS= read -r FILE_PATH; do
 
   if [ "$HTTP_CODE" = "200" ]; then
     mv "$LOCAL_PATH.tmp" "$LOCAL_PATH"
-    if [[ "$FILE_PATH" == *.sh ]] || [[ "$FILE_PATH" == ".git/hooks/"* ]]; then
+    if [[ "$FILE_PATH" == *.sh ]] || [[ "$FILE_PATH" == "git-hooks/"* ]]; then
       chmod +x "$LOCAL_PATH"
     fi
     ((INSTALLED++)) || true
