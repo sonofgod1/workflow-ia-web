@@ -24,8 +24,8 @@ step() { echo ""; echo "── $1 ───────────────�
 
 # ─── Verificar entorno ────────────────────────────────────────────────────────
 
-command -v curl   > /dev/null 2>&1 || err "curl es necesario. Instálalo antes de continuar."
-command -v git    > /dev/null 2>&1 || err "git es necesario. Instálalo antes de continuar."
+command -v curl    > /dev/null 2>&1 || err "curl es necesario. Instálalo antes de continuar."
+command -v git     > /dev/null 2>&1 || err "git es necesario. Instálalo antes de continuar."
 command -v python3 > /dev/null 2>&1 || err "python3 es necesario. Instálalo antes de continuar."
 
 echo ""
@@ -36,7 +36,8 @@ echo ""
 info "Repositorio fuente: $WORKFLOW_REPO"
 info "Branch: $BRANCH"
 
-# Verificar si estamos en un repo Git
+# ─── Verificar o inicializar repo Git ────────────────────────────────────────
+
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
   warn "No hay repositorio Git aquí. ¿Deseas inicializarlo? (s/n)"
   read -r INIT_GIT
@@ -61,9 +62,7 @@ if [ -f "CLAUDE.md" ]; then
   warn "CLAUDE.md ya existe. Se preservará — no se sobreescribirá."
 fi
 
-WORKFLOW_EXISTS=false
 if [ -d ".claude/commands" ] && [ "$(ls -A .claude/commands 2>/dev/null)" ]; then
-  WORKFLOW_EXISTS=true
   warn ".claude/commands ya contiene archivos."
   echo ""
   echo "  ¿Deseas sobreescribir los comandos existentes? (s/n)"
@@ -87,16 +86,24 @@ TREE_RESPONSE=$(curl -s "${API_HEADERS[@]}" \
   "$GITHUB_API/repos/$WORKFLOW_REPO/git/trees/$BRANCH?recursive=1")
 
 # Verificar error de API
-if echo "$TREE_RESPONSE" | grep -q '"message"'; then
+if echo "$TREE_RESPONSE" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if 'message' in data:
+    print(data['message'])
+    sys.exit(1)
+" 2>/dev/null; then
+  : # ok
+else
   API_MSG=$(echo "$TREE_RESPONSE" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 print(data.get('message', 'Error desconocido'))
-" 2>/dev/null || echo "Error desconocido")
+" 2>/dev/null || echo "No se pudo conectar con GitHub")
   err "Error de GitHub API: $API_MSG"
 fi
 
-# ── Extraer paths con python3 (compatible macOS y Linux) ──────────────────────
+# Extraer paths con python3 (compatible macOS y Linux)
 ALL_FILES=$(echo "$TREE_RESPONSE" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -105,7 +112,10 @@ for item in data.get('tree', []):
         print(item['path'])
 ")
 
-WORKFLOW_FILES=$(echo "$ALL_FILES" | grep -E "^(\.claude/|git-hooks/|docs/|\.gitignore|sync-workflow\.sh)" | grep -v "^$")
+# FIX: patrón ampliado — incluye .gitignore y CLAUDE.md en la raíz explícitamente
+WORKFLOW_FILES=$(echo "$ALL_FILES" \
+  | grep -E "^(\.claude/|git-hooks/|docs/|sync-workflow\.sh$|\.gitignore$)" \
+  | grep -v "^$")
 
 TOTAL=$(echo "$WORKFLOW_FILES" | grep -c "." || true)
 info "$TOTAL archivos a instalar"
@@ -128,7 +138,8 @@ while IFS= read -r FILE_PATH; do
 
   if [ "$HTTP_CODE" = "200" ]; then
     mv "$LOCAL_PATH.tmp" "$LOCAL_PATH"
-    if [[ "$FILE_PATH" == *.sh ]] || [[ "$FILE_PATH" == "git-hooks/"* ]]; then
+    # Dar permisos de ejecución a scripts
+    if [[ "$FILE_PATH" == *.sh ]] || [[ "$FILE_PATH" == git-hooks/* ]]; then
       chmod +x "$LOCAL_PATH"
     fi
     ((INSTALLED++)) || true
@@ -160,21 +171,51 @@ else
   info "CLAUDE.md existente preservado"
 fi
 
-# ─── Inicializar Git si no hay commits ────────────────────────────────────────
+# ─── Commit inicial si no hay commits ────────────────────────────────────────
+#
+# FIX: se eliminó el set -e dentro de este bloque para evitar que un git add
+# parcial (e.g. sync-workflow.sh aún no descargado) mate el script antes del
+# commit. Ahora el bloque es tolerante: intenta agregar lo que exista y
+# solo falla si el commit en sí falla.
 
 step "Verificando Git"
 
-COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+# FIX: detección robusta de repo sin commits (HEAD ambiguo)
+if git rev-parse HEAD > /dev/null 2>&1; then
+  HAS_COMMITS=true
+else
+  HAS_COMMITS=false
+fi
 
-if [ "$COMMIT_COUNT" = "0" ]; then
+if [ "$HAS_COMMITS" = "false" ]; then
   info "Sin commits. Creando commit inicial del workflow..."
-  git add .claude/ .gitignore CLAUDE.md docs/ sync-workflow.sh 2>/dev/null || git add -A
-  git commit -m "chore: workflow-ia-web inicializado"
-  ok "Commit inicial creado"
+
+  # Agregar todo lo que exista — tolerante a archivos faltantes
+  set +e
+  git add .claude/       2>/dev/null
+  git add git-hooks/     2>/dev/null
+  git add docs/          2>/dev/null
+  git add .gitignore     2>/dev/null
+  git add CLAUDE.md      2>/dev/null
+  git add sync-workflow.sh 2>/dev/null
+  set -e
+
+  # Verificar que haya algo en staging antes de commitear
+  STAGED=$(git diff --cached --name-only)
+  if [ -z "$STAGED" ]; then
+    warn "No hay archivos en staging. Agrega los archivos manualmente y haz el primer commit:"
+    echo ""
+    echo "     git add -A"
+    echo "     git commit -m \"chore: workflow-ia-web inicializado\""
+  else
+    git commit -m "chore: workflow-ia-web inicializado"
+    ok "Commit inicial creado"
+  fi
 else
   ok "Repositorio con commits existentes — no se crea commit automático"
   info "Sugerencia:"
-  echo "     git add .claude/ sync-workflow.sh docs/"
+  echo ""
+  echo "     git add .claude/ git-hooks/ docs/ .gitignore sync-workflow.sh"
   echo "     git commit -m \"chore: workflow-ia-web instalado\""
 fi
 
@@ -186,6 +227,7 @@ echo "│   ✅  workflow-ia-web instalado                 │"
 echo "└─────────────────────────────────────────────────┘"
 echo ""
 echo "  Archivos instalados: $INSTALLED"
+[ $ERRORS -gt 0 ] && echo "  Errores de descarga: $ERRORS"
 echo ""
 echo "  Próximos pasos:"
 echo "  1. Abre CLAUDE.md y personaliza el 'Norte del proyecto'"
