@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# .git/hooks/pre-push
-# Corre antes de cada push del usuario.
-# Instalado por /git-setup
-
-set -e
+# .git/hooks/pre-push — v1.1
+# fix: set -e removido; detección de stack tolerante a fallo
 
 REMOTE="$1"
 URL="$2"
@@ -12,23 +9,20 @@ echo "🚀 pre-push: verificando antes de push a $REMOTE ($URL)..."
 
 EXIT_CODE=0
 
-# ─── Detectar stack ───────────────────────────────────────────────────────────
-
-HAS_NODE=$([ -f "package.json" ] && echo "yes")
-HAS_PYTHON=$([ -f "pyproject.toml" ] || [ -f "setup.py" ] && echo "yes")
-
-# ─── 1. Tests unitarios ───────────────────────────────────────────────────────
+HAS_NODE=""
+HAS_PYTHON=""
+[ -f "package.json" ] && HAS_NODE="yes"
+[ -f "pyproject.toml" ] && HAS_PYTHON="yes"
+[ -f "setup.py" ] && HAS_PYTHON="yes"
 
 echo "  Ejecutando tests..."
 
 if [ "$HAS_NODE" = "yes" ]; then
-  # Detectar test runner
   if grep -q '"test"' package.json 2>/dev/null; then
     npm test --silent 2>/dev/null
     TEST_CODE=$?
     if [ $TEST_CODE -ne 0 ]; then
-      echo "  ❌ Tests fallaron."
-      echo "     Ejecuta: npm test"
+      echo "  ❌ Tests fallaron. Ejecuta: npm test"
       EXIT_CODE=$TEST_CODE
     else
       echo "  ✓ Tests JS/TS OK."
@@ -36,62 +30,31 @@ if [ "$HAS_NODE" = "yes" ]; then
   else
     echo "  ⚠️  Sin script 'test' en package.json. Saltando tests."
   fi
-
 elif [ "$HAS_PYTHON" = "yes" ]; then
   if command -v pytest > /dev/null 2>&1; then
     pytest --tb=short -q 2>/dev/null
     TEST_CODE=$?
-    if [ $TEST_CODE -ne 0 ]; then
-      echo "  ❌ Tests Python fallaron."
-      echo "     Ejecuta: pytest"
-      EXIT_CODE=$TEST_CODE
-    else
-      echo "  ✓ Tests Python OK."
-    fi
+    [ $TEST_CODE -ne 0 ] && echo "  ❌ Tests Python fallaron." && EXIT_CODE=$TEST_CODE || echo "  ✓ Tests Python OK."
   else
     echo "  ⚠️  pytest no encontrado. Saltando tests Python."
   fi
-
 else
-  echo "  ⚠️  Stack no detectado. Saltando tests automáticos."
+  echo "  ⚠️  Stack no detectado. Saltando tests."
 fi
-
-# ─── 2. Validación de contratos TypeScript ────────────────────────────────────
 
 if [ -f "docs/contracts/components.ts" ] && [ -f "node_modules/.bin/tsc" ]; then
-  echo "  Validando contratos TypeScript..."
   node_modules/.bin/tsc --noEmit --strict --skipLibCheck 2>/dev/null
   CONTRACTS_CODE=$?
-  if [ $CONTRACTS_CODE -ne 0 ]; then
-    echo "  ❌ Contratos TypeScript no son válidos."
-    echo "     Revisa docs/contracts/components.ts"
-    EXIT_CODE=$CONTRACTS_CODE
-  else
-    echo "  ✓ Contratos TypeScript OK."
-  fi
+  [ $CONTRACTS_CODE -ne 0 ] && echo "  ❌ Contratos TypeScript inválidos." && EXIT_CODE=$CONTRACTS_CODE || echo "  ✓ Contratos TypeScript OK."
 fi
 
-# ─── 3. Verificar que no se pushea a main directamente ────────────────────────
-
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
-
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || true)
 if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
   echo ""
-  echo "  ⚠️  Push directo a main detectado."
-  echo "     El flujo recomendado es: feature/* → develop → main"
-  echo "     Si esto es un hotfix o release intencional, continúa."
+  echo "  ⚠️  Push directo a main. Flujo recomendado: feature/* → develop → main"
+  echo "     Si es release o hotfix intencional, continúa."
   echo ""
 fi
 
-# ─── Resultado final ──────────────────────────────────────────────────────────
-
-if [ $EXIT_CODE -eq 0 ]; then
-  echo "✅ pre-push: todo OK. Procediendo con el push."
-else
-  echo ""
-  echo "❌ pre-push falló. Corrige los errores antes de pushear."
-  echo "   Para saltarte el hook excepcionalmente (no recomendado):"
-  echo "   git push --no-verify"
-fi
-
+[ $EXIT_CODE -eq 0 ] && echo "✅ pre-push: OK." || echo "❌ pre-push falló. Para saltarte: git push --no-verify"
 exit $EXIT_CODE
