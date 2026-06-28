@@ -1,12 +1,12 @@
 # workflow-ia-web
 
-Sistema de slash commands para Claude Code diseñado para proyectos web profesionales. Cubre el ciclo completo: desde el brief inicial hasta la entrega al cliente, con disciplina en SEO, accesibilidad, performance y seguridad desde el día uno.
+Sistema de slash commands para Claude Code diseñado para proyectos web profesionales. Cubre el ciclo completo: desde el brief inicial hasta la entrega al cliente — y lo que viene después — con disciplina en SEO, accesibilidad, performance y seguridad desde el día uno.
 
 ---
 
 ## ¿Qué incluye?
 
-**18 comandos** que guían cada fase del proyecto. **Infraestructura de calidad** con hooks de Git y Claude Code. **Templates de documentación** para cada entregable.
+**19 comandos** que guían cada fase del proyecto, incluyendo modificaciones post-launch. **Infraestructura de calidad** con hooks de Git y Claude Code. **Templates de documentación** para cada entregable.
 
 El workflow separa explícitamente tres mundos que no deben mezclarse:
 
@@ -86,6 +86,11 @@ git init
 /launch             Checklist de lanzamiento. Bloquea si hay Blockers.
      ↓
 /handoff            Documentación de entrega al cliente.
+     ↓
+     ⟲ /change      Modificaciones post-launch. Se re-ejecuta cada vez que
+                     el sitio necesita un cambio. Proceso proporcional al
+                     tamaño del cambio — no re-corre auditorías completas
+                     sin justificación.
 ```
 
 ---
@@ -102,6 +107,44 @@ git init
 
 **El agente nunca hace commits.** Sugiere los comandos exactos; el usuario ejecuta siempre.
 
+**El proyecto sigue vivo después de /handoff.** `/change` es el punto de entrada para todo lo que pase después del lanzamiento — con el mismo rigor de contratos, pero con proceso proporcional al tamaño del cambio.
+
+---
+
+## Modificaciones post-launch
+
+Después de `/handoff`, el proyecto sigue vivo. `/change` es el punto de entrada para cualquier modificación sobre un sitio ya lanzado.
+
+**Principio: proporcionalidad.** Un cambio de una palabra no re-corre `/seo` completo. Una página nueva no re-corre todas las auditorías del sitio. `/change` clasifica el cambio, identifica exactamente qué contrato toca, y re-corre solo lo necesario para verificarlo.
+
+### Clasificación
+
+| Categoría | Ejemplo |
+|-----------|---------|
+| Contenido | Cambiar un texto, CTA, precio, imagen |
+| Diseño | Cambiar un color, espaciado, componente visual |
+| Funcionalidad | Nueva lógica, formulario, integración |
+| Estructura | Nueva página, cambio de URL, reorganizar navegación |
+| Bug | Algo que debería funcionar y no funciona |
+
+### Contratos que puede afectar
+
+- `docs/design/tokens.json` — si el cambio toca color, espaciado, tipografía
+- `docs/content/architecture.md` y `urls.md` — si el cambio agrega/elimina/renombra páginas
+- Metadata SEO y structured data — si cambia H1, title, o estructura indexable
+- Accesibilidad — si introduce un componente o estado nuevo
+- Analytics — si introduce un evento o interacción nueva
+
+### Branch según el cambio
+
+| Situación | Branch |
+|-----------|--------|
+| Bug urgente en producción | `hotfix/[slug]` desde `main` |
+| Bug no urgente / contenido / diseño puntual | `fix/[slug]` desde `develop` |
+| Funcionalidad nueva / cambio estructural | `feature/[slug]` desde `develop` |
+
+Cada cambio queda registrado en `docs/changes/YYYY-MM-DD-[slug].md` con su clasificación, contratos afectados, fases re-corridas (o por qué no hizo falta re-correrlas) y el commit que lo resolvió.
+
 ---
 
 ## Estructura generada
@@ -112,22 +155,23 @@ proyecto/
 ├── .claude/
 │   ├── settings.json            ← Hooks de Claude Code
 │   ├── protected.txt            ← Archivos que no se pueden editar sin deliberación
-│   ├── commands/                ← Los 18 slash commands
+│   ├── commands/                ← Los 19 slash commands
 │   └── hooks/                   ← Hooks de Claude Code (5 scripts)
 ├── .git/hooks/                  ← Hooks nativos de Git (pre-commit, pre-push, commit-msg)
 ├── docs/
 │   ├── brief/                   ← Output de /brief
-│   ├── discovery/               ← Output de /discovery
-│   ├── content/                 ← Output de /content
-│   ├── design/                  ← tokens.json (contrato vinculante) + components
-│   ├── adr/                     ← 6 ADRs de /architect
-│   ├── contracts/               ← Metadata SEO, structured data, interfaces TS
-│   ├── analytics/               ← Plan de medición y verificación
-│   ├── reviews/                 ← Todos los hallazgos de auditorías
-│   ├── handoff/                 ← Documentación de entrega
-│   ├── ideas-features/          ← Captura de ideas durante el proyecto
-│   ├── launch-checklist.md      ← Output de /launch
-│   └── tech-debt.md             ← Deuda técnica documentada
+│   ├── discovery/                ← Output de /discovery
+│   ├── content/                  ← Output de /content
+│   ├── design/                   ← tokens.json (contrato vinculante) + components
+│   ├── adr/                      ← 6 ADRs de /architect
+│   ├── contracts/                ← Metadata SEO, structured data, interfaces TS
+│   ├── analytics/                ← Plan de medición y verificación
+│   ├── reviews/                  ← Todos los hallazgos de auditorías
+│   ├── changes/                  ← Output de /change, una entrada por modificación
+│   ├── handoff/                  ← Documentación de entrega
+│   ├── ideas-features/           ← Captura de ideas durante el proyecto
+│   ├── launch-checklist.md       ← Output de /launch
+│   └── tech-debt.md              ← Deuda técnica documentada
 ├── sync-workflow.sh             ← Actualiza el workflow sin tocar CLAUDE.md
 ├── init.sh                      ← Instalador para proyectos existentes
 └── .gitignore

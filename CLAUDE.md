@@ -28,6 +28,7 @@ Estas reglas no se negocian. Si un paso del flujo entra en conflicto con alguna,
 13. **El norte del proyecto se contrasta en cada fase.** Si una decisión técnica o de diseño se aleja del norte, el agente lo reporta antes de continuar.
 14. **Los hallazgos tienen ID siempre.** Formato: `[B|I|S|TD]-YYYYMMDD-NNN`. Se registran en docs/reviews/, nunca se ignoran silenciosamente.
 15. **El agente no diseña visualmente.** /design interpreta y formaliza el output de Claude Design o herramienta equivalente. No produce mockups desde cero.
+16. **Todo cambio post-launch pasa por /change.** Ningún cambio se implementa directamente sobre un sitio lanzado sin clasificarlo primero y verificar qué contratos afecta. El proceso es proporcional al tamaño del cambio — nunca se re-corre una auditoría completa por un cambio que no la justifica.
 
 ---
 
@@ -66,6 +67,9 @@ Estas reglas no se negocian. Si un paso del flujo entra en conflicto con alguna,
 | 15 | `/security` | Auditoría de seguridad | docs/reviews/security-*.md | No escribe código |
 | 16 | `/launch` | Checklist de lanzamiento | docs/launch-checklist.md | No modifica código |
 | 17 | `/handoff` | Documentación de entrega | docs/handoff/*.md | No modifica código |
+| 18 | `/change` | Modificación post-launch | docs/changes/*.md + código | Proceso proporcional al tamaño del cambio |
+
+> `/change` es la única fase que se re-ejecuta indefinidamente después de `/handoff`. No sigue el orden lineal del resto — se invoca cada vez que el sitio ya lanzado necesita una modificación.
 
 ---
 
@@ -122,8 +126,8 @@ vMAJOR.MINOR.PATCH
 
 Tags especiales:
 ```
-v0.0.1        ← workflow inicializado (/git-setup)
-v1.0.0        ← lanzamiento a producción (/launch)
+v0.0.1         ← workflow inicializado (/git-setup)
+v1.0.0         ← lanzamiento a producción (/launch)
 v1.0.0-handoff ← documentación de entrega completa (/handoff)
 ```
 
@@ -149,6 +153,30 @@ git tag -a v[X.Y.Z] -m "release: descripción"
 git push origin main --follow-tags
 
 # 5. Sincronizar develop con main post-release
+git checkout develop
+git merge main
+git push origin develop
+```
+
+### Ciclo de un cambio post-launch (/change)
+
+```bash
+# Bug no urgente / contenido / diseño puntual
+git checkout develop
+git checkout -b fix/[slug]
+# ... implementar ...
+git checkout develop
+git merge fix/[slug] --no-ff -m "fix([scope]): descripción"
+git push origin develop
+
+# Hotfix urgente — directo desde main
+git checkout main
+git checkout -b hotfix/[slug]
+# ... implementar ...
+git checkout main
+git merge hotfix/[slug] --no-ff -m "fix: descripción"
+git tag -a v[X.Y.Z] -m "fix: descripción"
+git push origin main --follow-tags
 git checkout develop
 git merge main
 git push origin develop
@@ -195,7 +223,10 @@ docs/
 │   ├── YYYY-MM-DD-accessibility-[nombre].md
 │   ├── YYYY-MM-DD-seo-[nombre].md
 │   ├── YYYY-MM-DD-performance-[nombre].md
-│   └── YYYY-MM-DD-review-[nombre].md
+│   ├── YYYY-MM-DD-review-[nombre].md
+│   └── YYYY-MM-DD-security-[nombre].md
+├── changes/
+│   └── YYYY-MM-DD-[slug].md     ← output de /change, uno por modificación post-launch
 ├── handoff/
 │   ├── owner-guide.md           ← cómo editar contenido (lenguaje no técnico)
 │   ├── technical-summary.md     ← stack, servicios, credenciales (dónde, no valores)
