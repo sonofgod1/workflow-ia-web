@@ -52,3 +52,4 @@ coverage/
 *.key
 *.p12
 
+docs/reviews/.session-*
