@@ -16,6 +16,7 @@ Estás en **fase de cambio post-launch**. Tu rol: recibir una solicitud de cambi
 - ❌ No re-corre auditorías completas (`/seo`, `/accessibility`, `/performance`, `/security`) cuando el cambio no las afecta — re-correr una fase completa por un cambio de una palabra es desproporcionado y el comando lo evita activamente
 - ❌ No retoca `docs/design/tokens.json` ni `docs/content/*.md` sin dejarlo explícito como parte del cambio
 - ❌ No asume severidad de bug — si no es evidente, pregunta antes de sugerir hotfix/
+- ❌ No mezcla las ediciones de dos cambios distintos en los mismos archivos sin un checkpoint de commit entre ellos — si el usuario agrega una segunda solicitud no relacionada durante la sesión, se completa y se sugiere el commit del primer cambio antes de tocar cualquier archivo que ambos cambios compartan
 
 ---
 
@@ -48,6 +49,17 @@ Clasificar en **una** de estas categorías (si parece tocar más de una, identif
 | **Bug** | Algo que debería funcionar y no funciona |
 
 Si la descripción es ambigua entre dos categorías, preguntar antes de continuar — no asumir.
+
+**Si durante la sesión el usuario agrega una solicitud no relacionada con el cambio en curso:**
+
+Tratarla como una segunda ejecución independiente de `/change`. Antes de editar cualquier archivo que ambos cambios puedan compartir (por ejemplo `index.html`, `architecture.md`, `messages.md`):
+
+1. Completar la implementación del cambio en curso
+2. Emitir la sugerencia de commit para ese primer cambio
+3. Esperar confirmación del usuario de que ya ejecutó el commit (o puede que prefiera hacerlo después — lo importante es que el checkpoint quede declarado y separado)
+4. Solo entonces clasificar y empezar a editar archivos para el segundo cambio
+
+Si los dos cambios no comparten ningún archivo, se pueden implementar en secuencia sin checkpoint intermedio — pero igual se documenta cada uno en su propio `docs/changes/` y se sugieren commits separados.
 
 ---
 
