@@ -23,13 +23,14 @@ if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
   echo "dificulta la revisión y rompe el flujo de integración continua."
   echo ""
   echo "Si esto es un hotfix deliberado, puedes continuar."
-  echo "Si no, crea una branch antes de continuar:"
+  echo "Si no, crea una branch antes de continuar (GitHub Flow):"
   echo ""
-  echo "  git checkout develop"
   echo "  git checkout -b feature/[descripción-corta]"
   echo ""
   echo "  O para un hotfix urgente:"
   echo "  git checkout -b hotfix/[descripción-corta]"
+  echo ""
+  echo "  El merge a main es por PR, no trabajo directo aquí."
   echo ""
   # Exit 0 = advertencia, no bloqueo
   exit 0

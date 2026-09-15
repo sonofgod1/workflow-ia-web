@@ -1,0 +1,9 @@
+---
+description: Workflow SDD del repo. Cualquier agente en Cursor carga AGENTS.md y las skills en .agents/skills/.
+alwaysApply: true
+---
+
+Leé `AGENTS.md` en la raíz. Procedimientos: `.agents/skills/<nombre>.md`.
+Loop: start → spec → build → check. Bugs: backprop. Post-launch: change.
+Git: `.agents/git.md` (main + PR). Agente no commitea.
+SPEC.md según `FORMAT.md`. Caveman solo en la spec.
