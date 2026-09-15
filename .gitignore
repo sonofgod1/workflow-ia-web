@@ -3,13 +3,13 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build outputs
-dist/
-build/
-.next/
-out/
-.nuxt/
-.output/
+# Build outputs (solo raíz del proyecto — no .cursor/skills/build)
+/dist/
+/build/
+/.next/
+/out/
+/.nuxt/
+/.output/
 
 # Environment & secrets
 .env

@@ -17,10 +17,17 @@ RAW_BASE="https://raw.githubusercontent.com/$WORKFLOW_REPO/$BRANCH"
 
 # Archivos y carpetas a sincronizar
 SYNC_PATHS=(
+  ".agents"
   ".claude/commands"
   ".claude/hooks"
   ".claude/settings.json"
   ".claude/protected.txt"
+  ".cursor/commands"
+  ".cursor/skills"
+  ".cursor/rules"
+  "FORMAT.md"
+  "AGENTS.md"
+  "git-hooks"
 )
 
 # ─── Flags ────────────────────────────────────────────────────────────────────
@@ -160,12 +167,12 @@ else
   echo "   Actualizados: $UPDATED"
   [ $ERRORS -gt 0 ] && echo "   Errores:       $ERRORS"
   echo ""
-  echo "   CLAUDE.md: no modificado (preservado)"
+  echo "   CLAUDE.md y SPEC.md: no modificados (preservados)"
   echo ""
 
   if [ $UPDATED -gt 0 ] && ! $DRY_RUN; then
     echo "   Commit sugerido:"
-    echo "   git add .claude/"
+    echo "   git add .agents/ .claude/ .cursor/ AGENTS.md FORMAT.md git-hooks/"
     echo "   git commit -m \"chore: sync workflow desde $WORKFLOW_REPO\""
   fi
 fi

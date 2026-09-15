@@ -51,7 +51,7 @@ fi
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || true)
 if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
   echo ""
-  echo "  ⚠️  Push directo a main. Flujo recomendado: feature/* → develop → main"
+  echo "  ⚠️  Push directo a main. Flujo: feature|fix|hotfix/* → PR → main"
   echo "     Si es release o hotfix intencional, continúa."
   echo ""
 fi

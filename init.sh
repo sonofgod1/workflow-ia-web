@@ -62,13 +62,19 @@ if [ -f "CLAUDE.md" ]; then
   warn "CLAUDE.md ya existe. Se preservará — no se sobreescribirá."
 fi
 
+SPEC_EXISTS=false
+if [ -f "SPEC.md" ]; then
+  SPEC_EXISTS=true
+  warn "SPEC.md ya existe. Se preservará — no se sobreescribirá."
+fi
+
 if [ -d ".claude/commands" ] && [ "$(ls -A .claude/commands 2>/dev/null)" ]; then
   warn ".claude/commands ya contiene archivos."
   echo ""
-  echo "  ¿Deseas sobreescribir los comandos existentes? (s/n)"
+  echo "  ¿Deseas sobreescribir comandos y skills del workflow? (s/n)"
   read -r OVERWRITE
   if [[ ! "$OVERWRITE" =~ ^[sS] ]]; then
-    info "Instalación cancelada. Usa sync-workflow.sh para actualizar comandos existentes."
+    info "Instalación cancelada. Usa sync-workflow.sh para actualizar."
     exit 0
   fi
 fi
@@ -112,10 +118,12 @@ for item in data.get('tree', []):
         print(item['path'])
 ")
 
-# FIX: patrón ampliado — incluye .gitignore y CLAUDE.md en la raíz explícitamente
+# FIX: patrón SDD — skills agnósticas + adapters + docs
 WORKFLOW_FILES=$(echo "$ALL_FILES" \
-  | grep -E "^(\.claude/|git-hooks/|docs/|sync-workflow\.sh$|\.gitignore$)" \
-  | grep -v "^$")
+  | grep -E "^(\.agents/|\.claude/|\.cursor/|git-hooks/|docs/|sync-workflow\.sh$|FORMAT\.md$|AGENTS\.md$|\.gitignore$)" \
+  | grep -v "^$" \
+  | grep -v "^SPEC.md$" \
+  | grep -v "^CLAUDE.md$")
 
 TOTAL=$(echo "$WORKFLOW_FILES" | grep -c "." || true)
 info "$TOTAL archivos a instalar"
@@ -171,6 +179,22 @@ else
   info "CLAUDE.md existente preservado"
 fi
 
+# ─── SPEC.md solo si no existe (spec del proyecto, no del template) ───────────
+
+if ! $SPEC_EXISTS; then
+  step "Creando SPEC.md (template SDD)"
+  HTTP_CODE=$(curl -s -o "./SPEC.md.tmp" -w "%{http_code}" "${API_HEADERS[@]}" "$RAW_BASE/SPEC.md")
+  if [ "$HTTP_CODE" = "200" ]; then
+    mv "./SPEC.md.tmp" "./SPEC.md"
+    ok "SPEC.md creado (placeholder — corré start new|existing)"
+  else
+    rm -f "./SPEC.md.tmp"
+    warn "No se pudo descargar SPEC.md"
+  fi
+else
+  info "SPEC.md existente preservado"
+fi
+
 # ─── Commit inicial si no hay commits ────────────────────────────────────────
 #
 # FIX: se eliminó el set -e dentro de este bloque para evitar que un git add
@@ -192,11 +216,13 @@ if [ "$HAS_COMMITS" = "false" ]; then
 
   # Agregar todo lo que exista — tolerante a archivos faltantes
   set +e
+  git add .agents/       2>/dev/null
   git add .claude/       2>/dev/null
+  git add .cursor/       2>/dev/null
   git add git-hooks/     2>/dev/null
   git add docs/          2>/dev/null
   git add .gitignore     2>/dev/null
-  git add CLAUDE.md      2>/dev/null
+  git add CLAUDE.md AGENTS.md FORMAT.md SPEC.md 2>/dev/null
   git add sync-workflow.sh 2>/dev/null
   set -e
 
@@ -215,7 +241,7 @@ else
   ok "Repositorio con commits existentes — no se crea commit automático"
   info "Sugerencia:"
   echo ""
-  echo "     git add .claude/ git-hooks/ docs/ .gitignore sync-workflow.sh"
+  echo "     git add .agents/ .claude/ .cursor/ git-hooks/ docs/ AGENTS.md FORMAT.md SPEC.md CLAUDE.md .gitignore sync-workflow.sh"
   echo "     git commit -m \"chore: workflow-ia-web instalado\""
 fi
 
@@ -229,10 +255,13 @@ echo ""
 echo "  Archivos instalados: $INSTALLED"
 [ $ERRORS -gt 0 ] && echo "  Errores de descarga: $ERRORS"
 echo ""
+echo "  Agnóstico: Cursor, Claude Code y Codex leen AGENTS.md"
+echo "  Procedimientos: .agents/skills/"
+echo ""
 echo "  Próximos pasos:"
-echo "  1. En Claude Code, ejecuta /git-setup para configurar branches y hooks"
-echo "  2. Ejecuta /brief para empezar el proyecto"
-echo "     /brief llenará CLAUDE.md con el norte del proyecto"
+echo "  1. git-setup  (hooks; el agente sugiere, vos ejecutás)"
+echo "  2. start new      — proyecto desde cero"
+echo "     start existing — hay código; destila a SPEC.md"
 echo ""
 echo "  Para actualizar el workflow en el futuro:"
 echo "  bash sync-workflow.sh"

@@ -9,14 +9,21 @@ if [ -z "$FILE" ]; then
   exit 0
 fi
 
-PROTECTED_FILE=".claude/protected.txt"
-
+PROTECTED_FILE=".agents/protected.txt"
+if [ ! -f "$PROTECTED_FILE" ]; then
+  PROTECTED_FILE=".claude/protected.txt"
+fi
 if [ ! -f "$PROTECTED_FILE" ]; then
   exit 0
 fi
 
 # Normalizar ruta (quitar ./ inicial si existe)
 FILE="${FILE#./}"
+
+# SPEC.md lo mutan spec/build/backprop — nunca bloquear
+if [ "$FILE" = "SPEC.md" ]; then
+  exit 0
+fi
 
 while IFS= read -r pattern || [ -n "$pattern" ]; do
   # Ignorar líneas vacías y comentarios
@@ -30,13 +37,14 @@ while IFS= read -r pattern || [ -n "$pattern" ]; do
     echo ""
     echo "🔒 ARCHIVO PROTEGIDO: $FILE"
     echo ""
-    echo "Este archivo está en .claude/protected.txt porque es un contrato crítico del proyecto."
+    echo "Este archivo está en .agents/protected.txt (contrato crítico)."
     echo ""
-    echo "Para editarlo deliberadamente:"
-    echo "  1. Elimínalo temporalmente de .claude/protected.txt"
-    echo "  2. Haz el cambio"
-    echo "  3. Vuelve a agregarlo a protected.txt"
-    echo "  4. Documenta el cambio en el commit"
+    echo "SPEC.md lo editan las skills spec/backprop (y build solo status §T)."
+    echo "Para editar otro archivo protegido de forma deliberada:"
+    echo "  1. Sacalo temporalmente de .agents/protected.txt"
+    echo "  2. Hacé el cambio"
+    echo "  3. Volvé a agregarlo"
+    echo "  4. Documentá el cambio"
     echo ""
     exit 1
   fi

@@ -1,0 +1,47 @@
+# Archivos protegidos — workflow-ia-web
+# El agente no los edita salvo skill explícita (spec → SPEC.md; git-setup no toca docs de proyecto).
+# Formato: una ruta por línea. Globs básicos.
+
+# Contrato de agentes (SPEC.md y CLAUDE.md los escriben start/brief/spec)
+AGENTS.md
+FORMAT.md
+.agents/protected.txt
+
+# Workflow y configuración
+.claude/settings.json
+.claude/protected.txt
+
+# Contratos de diseño
+docs/design/tokens.json
+docs/design/components.md
+
+# Contratos de API y datos
+docs/contracts/api.md
+docs/contracts/seo-metadata.md
+docs/contracts/structured-data.md
+docs/contracts/components.ts
+
+# Credenciales
+.env
+.env.local
+.env.production
+.env.staging
+*.pem
+*.key
+*.cert
+
+# Analytics de negocio
+docs/analytics/measurement-plan.md
+
+# Deploy
+.github/workflows/*.yml
+vercel.json
+netlify.toml
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Hooks de Git
+.git/hooks/pre-commit
+.git/hooks/pre-push
+.git/hooks/commit-msg
