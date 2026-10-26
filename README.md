@@ -162,6 +162,8 @@ git push -u origin HEAD
 gh pr create
 ```
 
+Si hay un agente, la branch la crea él antes de editar. `git checkout -b` no es un commit: los commits y el push los seguís haciendo vos. Un PR a `main` también pasa por CI: archivos prohibidos y commits convencionales. `--no-verify` no salta esa barrera.
+
 Detalle: `.agents/git.md`.
 
 ---

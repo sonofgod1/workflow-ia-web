@@ -95,9 +95,9 @@ Caveman en español según `FORMAT.md`. Docs de cliente, ADRs, handoff, commits,
 GitHub Flow. Rama desde `main`. PR a `main`. Ver `.agents/git.md`.
 
 ```bash
-git checkout main && git pull
+# el agente, si está en main, antes del primer archivo (no es commit):
 git checkout -b feature/[slug]
-# usuario: commits
+# usuario: commits, push y PR
 git push -u origin HEAD
 gh pr create
 ```

@@ -88,9 +88,9 @@ main                 ← producción, siempre deployable, tags semver
 Ciclo:
 
 ```bash
-git checkout main && git pull
+# el agente, si está en main, antes del primer archivo (no es commit):
 git checkout -b feature/[slug]
-# commits convencionales (usuario)
+# commits, push y PR: el usuario
 git push -u origin HEAD
 gh pr create
 ```

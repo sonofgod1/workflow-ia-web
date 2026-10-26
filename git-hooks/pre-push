@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# .git/hooks/pre-push — v1.1
-# fix: set -e removido; detección de stack tolerante a fallo
+# git-hooks/pre-push
+# Node y Python pueden convivir (frontend + API). Cada uno corre su suite.
+# La salida del test se ve: silenciarla dejaba un fallo sin causa.
 
 REMOTE="$1"
 URL="$2"
@@ -8,6 +9,7 @@ URL="$2"
 echo "🚀 pre-push: verificando antes de push a $REMOTE ($URL)..."
 
 EXIT_CODE=0
+RAN=no
 
 HAS_NODE=""
 HAS_PYTHON=""
@@ -15,37 +17,54 @@ HAS_PYTHON=""
 [ -f "pyproject.toml" ] && HAS_PYTHON="yes"
 [ -f "setup.py" ] && HAS_PYTHON="yes"
 
-echo "  Ejecutando tests..."
-
 if [ "$HAS_NODE" = "yes" ]; then
+  RAN=yes
   if grep -q '"test"' package.json 2>/dev/null; then
-    npm test --silent 2>/dev/null
+    echo "  Tests JS/TS..."
+    npm test
     TEST_CODE=$?
     if [ $TEST_CODE -ne 0 ]; then
-      echo "  ❌ Tests fallaron. Ejecuta: npm test"
+      echo "  ❌ Tests JS/TS fallaron."
       EXIT_CODE=$TEST_CODE
     else
       echo "  ✓ Tests JS/TS OK."
     fi
   else
-    echo "  ⚠️  Sin script 'test' en package.json. Saltando tests."
+    echo "  ⚠️  Sin script 'test' en package.json. Saltando tests JS/TS."
   fi
-elif [ "$HAS_PYTHON" = "yes" ]; then
-  if command -v pytest > /dev/null 2>&1; then
-    pytest --tb=short -q 2>/dev/null
+fi
+
+if [ "$HAS_PYTHON" = "yes" ]; then
+  RAN=yes
+  if command -v pytest >/dev/null 2>&1; then
+    echo "  Tests Python..."
+    pytest --tb=short -q
     TEST_CODE=$?
-    [ $TEST_CODE -ne 0 ] && echo "  ❌ Tests Python fallaron." && EXIT_CODE=$TEST_CODE || echo "  ✓ Tests Python OK."
+    if [ $TEST_CODE -ne 0 ]; then
+      echo "  ❌ Tests Python fallaron."
+      EXIT_CODE=$TEST_CODE
+    else
+      echo "  ✓ Tests Python OK."
+    fi
   else
     echo "  ⚠️  pytest no encontrado. Saltando tests Python."
   fi
-else
+fi
+
+if [ "$RAN" = "no" ]; then
   echo "  ⚠️  Stack no detectado. Saltando tests."
 fi
 
-if [ -f "docs/contracts/components.ts" ] && [ -f "node_modules/.bin/tsc" ]; then
-  node_modules/.bin/tsc --noEmit --strict --skipLibCheck 2>/dev/null
+if [ -f "docs/contracts/components.ts" ] && [ -x "node_modules/.bin/tsc" ]; then
+  echo "  Contratos TypeScript..."
+  node_modules/.bin/tsc --noEmit --strict --skipLibCheck
   CONTRACTS_CODE=$?
-  [ $CONTRACTS_CODE -ne 0 ] && echo "  ❌ Contratos TypeScript inválidos." && EXIT_CODE=$CONTRACTS_CODE || echo "  ✓ Contratos TypeScript OK."
+  if [ $CONTRACTS_CODE -ne 0 ]; then
+    echo "  ❌ Contratos TypeScript inválidos."
+    EXIT_CODE=$CONTRACTS_CODE
+  else
+    echo "  ✓ Contratos TypeScript OK."
+  fi
 fi
 
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || true)
