@@ -183,9 +183,9 @@ npx create-next-app@latest . --typescript --tailwind --eslint --app
 npm install [dependencias adicionales según proyecto]
 ```
 
-Sugerir branch para el setup:
+Si estás en `main` o `master`, creá la branch del setup vos, antes del primer archivo:
+
 ```bash
-git checkout main && git pull
 git checkout -b feature/setup-stack
 ```
 

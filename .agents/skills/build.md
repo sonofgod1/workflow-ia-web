@@ -24,7 +24,7 @@ Antes de tocar código, mostrá plan y esperá OK (salvo que el usuario ya dijo 
 3. Archivos a crear / editar.
 4. Tests a agregar o actualizar (uno por invariante tocado, nombre cita `§V.n`).
 5. Comando de verificación (`test`, `build`, `lint` según `CLAUDE.md` / package.json).
-6. Branch sugerida desde **main** (`feature/[slug]` o `fix/[slug]`). Ver `.agents/git.md`.
+6. Branch desde **main** (`feature/[slug]` o `fix/[slug]`). Si estás en `main` o `master`, creala vos antes del primer archivo. Ver `.agents/git.md`.
 
 Si falta `tokens.json` y la tarea es UI visual-first: advertí. No bloquees APIs/CLI/infra. Si la tarea **es** UI y el tipo de proyecto exige tokens, pará y pedí `design` o un `[PENDIENTE]`.
 

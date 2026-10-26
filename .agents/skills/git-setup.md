@@ -46,9 +46,10 @@ Explicá:
 
 ```
 HOOKS
-pre-commit   lint + bloquea .env / node_modules
-pre-push     tests + advierte push a main (el flujo es PR)
+pre-commit   lint + formato si el proyecto lo declaró + bloquea .env / node_modules
+pre-push     tests de Node y de Python, con la salida a la vista + advierte push a main
 commit-msg   convencional: tipo(scope): desc
+CI           en cada PR a main: la misma lista de archivos y el mismo formato de commit. --no-verify no lo salta
 ```
 
 ## Paso 4 — Git local
@@ -82,6 +83,7 @@ GitHub Flow
   feature|fix|hotfix/[slug]  desde main → PR → main
 
 Hooks: pre-commit, pre-push, commit-msg
+CI: .github/workflows/ci.yml en cada PR a main
 Siguiente: start (new|existing)
 ```
 

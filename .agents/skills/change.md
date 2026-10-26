@@ -74,7 +74,9 @@ SPEC: amend §… | bug: … | sin cambio de spec
 | Página nueva | content parcial + §I | auditoría global |
 | Bug | test del área + backprop si clase | auditorías completas salvo patrón sistémico |
 
-## Paso 4 — branch (sugerida)
+## Paso 4 — branch
+
+Si estás en `main` o `master`, creá la branch vos antes del primer archivo. No es un commit.
 
 | Situación | Branch desde main |
 |---|---|
@@ -83,7 +85,7 @@ SPEC: amend §… | bug: … | sin cambio de spec
 | Feature / página / estructura | `feature/[slug]` |
 
 ```bash
-git checkout main && git pull
+# el agente, antes del primer archivo. El slug sale de la tabla.
 git checkout -b fix/[slug]
 ```
 

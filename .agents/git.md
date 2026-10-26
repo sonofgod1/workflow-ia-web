@@ -14,7 +14,8 @@ main          ← producción. siempre deployable. tags semver.
 - **main**: ⊥ trabajo directo. solo recibe PRs mergeados.
 - Branch desde `main` actualizado (`git pull`).
 - Todo cambio llega por **PR**. ⊥ merge local `--no-ff` a main como flujo default.
-- Agente ⊥ commit. ⊥ push. sugiere comandos exactos. usuario ejecuta.
+- Agente ⊥ commit. ⊥ push. ⊥ merge. Sugiere esos comandos; el usuario los ejecuta.
+- Si el agente está en `main` o `master` y va a editar, crea la branch **él**, antes del primer archivo: `git checkout -b feature/[slug]` (o `fix/` / `hotfix/`). No es commit ni push. Pedirla al usuario dejó el trabajo sobre la base.
 
 ## Commits convencionales
 
@@ -41,8 +42,8 @@ docs: brief y norte
 ## Ciclo feature → producción
 
 ```bash
-git checkout main
-git pull
+git checkout main && git pull
+# el agente, antes del primer archivo (no es commit):
 git checkout -b feature/[slug]
 # ... trabajo, commits convencionales (usuario) ...
 git push -u origin HEAD
@@ -63,6 +64,7 @@ Tras merge del PR: tag en main si es release.
 
 ```bash
 git checkout main && git pull
+# el agente, antes del primer archivo:
 git checkout -b hotfix/[slug]
 # ... fix ...
 git push -u origin HEAD

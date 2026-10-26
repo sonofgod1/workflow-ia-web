@@ -1,0 +1,67 @@
+name: CI
+
+# Los hooks locales se saltan con --no-verify. Esto corre en el PR y en main.
+# Misma lista de archivos que git-hooks/pre-commit y el mismo patrón que
+# git-hooks/commit-msg.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Un push nuevo a la branch de un PR deja obsoleta la corrida anterior.
+# En main no: cada merge conserva su resultado.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  archivos-prohibidos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar archivos prohibidos
+        run: |
+          # build/ y dist/ solo en la raíz: .cursor/skills/build es la skill, no la salida.
+          PATTERNS='\.env$|\.env\.local$|\.env\.production$|\.env\.staging$|node_modules/|\.tsbuildinfo$|\.db$|\.sqlite$|\.sqlite3$|^dist/|^build/|\.DS_Store$|Thumbs\.db$|\.pem$|\.key$|\.p12$'
+          FOUND=$(git ls-files | grep -E "$PATTERNS" || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::Archivos prohibidos versionados en el repo:"
+            printf '%s\n' "$FOUND" | sed 's/^/  /'
+            exit 1
+          fi
+          echo "✓ Sin archivos prohibidos."
+
+  commits-convencionales:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Validar el asunto de cada commit del PR
+        run: |
+          PATTERN='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\([a-zA-Z0-9_.-]+\))?(!)?: .{1,100}$'
+          BASE="${{ github.event.pull_request.base.sha }}"
+          FAILED=0
+          while IFS= read -r sha; do
+            [ -z "$sha" ] && continue
+            SUBJECT=$(git log -1 --format=%s "$sha")
+            case "$SUBJECT" in
+              Merge\ *|Rebase\ *|fixup!\ *|squash!\ *) continue ;;
+            esac
+            if ! printf '%s\n' "$SUBJECT" | grep -qE "$PATTERN"; then
+              echo "::error::Commit ${sha:0:7} — asunto inválido: $SUBJECT"
+              FAILED=1
+            fi
+          done < <(git rev-list "$BASE..HEAD")
+          if [ "$FAILED" -ne 0 ]; then
+            echo "Formato requerido: tipo(scope): descripción"
+            exit 1
+          fi
+          echo "✓ Todos los commits siguen el formato convencional."
