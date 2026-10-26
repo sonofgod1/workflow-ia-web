@@ -27,7 +27,8 @@ jobs:
 
       - name: Verificar archivos prohibidos
         run: |
-          PATTERNS='\.env$|\.env\.local$|\.env\.production$|\.env\.staging$|node_modules/|\.tsbuildinfo$|\.db$|\.sqlite$|\.sqlite3$|dist/|build/|\.DS_Store$|Thumbs\.db$|\.pem$|\.key$|\.p12$'
+          # build/ y dist/ solo en la raíz: .cursor/skills/build es la skill, no la salida.
+          PATTERNS='\.env$|\.env\.local$|\.env\.production$|\.env\.staging$|node_modules/|\.tsbuildinfo$|\.db$|\.sqlite$|\.sqlite3$|^dist/|^build/|\.DS_Store$|Thumbs\.db$|\.pem$|\.key$|\.p12$'
           FOUND=$(git ls-files | grep -E "$PATTERNS" || true)
           if [ -n "$FOUND" ]; then
             echo "::error::Archivos prohibidos versionados en el repo:"
