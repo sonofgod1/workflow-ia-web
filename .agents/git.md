@@ -16,6 +16,7 @@ main          ← producción. siempre deployable. tags semver.
 - Todo cambio llega por **PR**. ⊥ merge local `--no-ff` a main como flujo default.
 - Agente ⊥ commit. ⊥ push. ⊥ merge. Sugiere esos comandos; el usuario los ejecuta.
 - Si el agente está en `main` o `master` y va a editar, crea la branch **él**, antes del primer archivo: `git checkout -b feature/[slug]` (o `fix/` / `hotfix/`). No es commit ni push. Pedirla al usuario dejó el trabajo sobre la base.
+- Cada PR a `main` pasa por CI: archivos prohibidos y commits convencionales. `--no-verify` no lo salta.
 
 ## Commits convencionales
 

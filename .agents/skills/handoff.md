@@ -165,12 +165,16 @@ revisión manual antes de aplicar. Pueden romper funcionalidad.
 
 ## Hacer deploy de cambios (requiere acceso al repositorio)
 
+Si hay un agente, la branch la crea él antes de editar (`git checkout -b` no es un commit). El commit, el push y el PR los hace la persona. Sin agente, los comandos de abajo los corre ella desde el primer paso.
+
+El PR a `main` pasa por CI: archivos prohibidos y commits convencionales. `--no-verify` no salta esa barrera.
+
 ```bash
-# 1. Branch desde main
+# 1. Branch desde main (el agente, si lo hay; si no, la persona)
 git checkout main && git pull
 git checkout -b feature/[slug]   # o fix/[slug]
 
-# 2. Cambios + commit convencional
+# 2. Cambios + commit convencional (la persona)
 git add .
 git commit -m "tipo(scope): descripción"
 
@@ -180,7 +184,6 @@ npm test
 # 4. PR a main (no merge local a main)
 git push -u origin HEAD
 gh pr create --title "tipo(scope): descripción" --body "…"
-```
 ```
 
 ## Interpretar alertas de Sentry (error tracking)

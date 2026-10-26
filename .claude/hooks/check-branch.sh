@@ -16,23 +16,18 @@ if [ -z "$CURRENT_BRANCH" ]; then
 fi
 
 if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
-  echo ""
-  echo "⚠️  ADVERTENCIA: Estás trabajando directamente en '$CURRENT_BRANCH'"
-  echo ""
-  echo "main debe mantenerse siempre deployable. El trabajo directo aquí"
-  echo "dificulta la revisión y rompe el flujo de integración continua."
-  echo ""
-  echo "Si esto es un hotfix deliberado, puedes continuar."
-  echo "Si no, crea una branch antes de continuar (GitHub Flow):"
-  echo ""
-  echo "  git checkout -b feature/[descripción-corta]"
-  echo ""
-  echo "  O para un hotfix urgente:"
-  echo "  git checkout -b hotfix/[descripción-corta]"
-  echo ""
-  echo "  El merge a main es por PR, no trabajo directo aquí."
-  echo ""
-  # Exit 0 = advertencia, no bloqueo
+  # stderr: un aviso en stdout no es JSON y Cursor lo toma como bloqueo.
+  cat >&2 <<EOF
+
+⚠️  Estás en '$CURRENT_BRANCH'. Creá la branch vos, antes del primer archivo.
+    No es un commit ni un push:
+
+  git checkout -b feature/[descripción-corta]
+  git checkout -b hotfix/[descripción-corta]
+
+El commit, el push y el merge los hace el usuario. El PR a main pasa por CI.
+
+EOF
   exit 0
 fi
 
